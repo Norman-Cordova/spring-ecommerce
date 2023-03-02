@@ -19,6 +19,10 @@ public class Producto {
 	
 	@ManyToOne
 	private Usuario usuario;
+	
+	public Producto() {
+		super();
+	}
 
 	public Producto(Integer id, String nombre, String descripcion, String imagen, int cantidad, double precio,
 			Usuario usuario) {
