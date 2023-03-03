@@ -1,5 +1,6 @@
 package com.curso.ecommerce.controller;
 
+import java.io.IOException;
 import java.util.Optional;
 
 import org.slf4j.*;
@@ -10,11 +11,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.multipart.MultipartFile;
 
 import com.curso.ecommerce.model.Producto;
 import com.curso.ecommerce.model.Usuario;
 import com.curso.ecommerce.service.IProductoService;
 import com.curso.ecommerce.service.ProductoServiceImpl;
+import com.curso.ecommerce.service.UploadFileService;
 
 @Controller
 @RequestMapping("/productos")
@@ -23,6 +27,9 @@ public class ProductoController {
 	private final Logger LOGGER = LoggerFactory.getLogger(ProductoController.class);
 	@Autowired
 	private IProductoService productoService ;
+	
+	@Autowired
+	private UploadFileService uploadFileService;
 	
 	@GetMapping("")
 	public String show(Model model) {
@@ -36,10 +43,24 @@ public class ProductoController {
 	}
 	
 	@PostMapping("/save")
-	public String save(Producto producto) {
+	public String save(Producto producto,@RequestParam("img") MultipartFile file) throws IOException {
 		LOGGER.info("Este es el objeto producto {}", producto);
 		Usuario u = new Usuario(1, "", "", "", "", "", "", "");
 		producto.setUsuario(u);
+		
+		//Imagen
+		if(producto.getId() == null) { //Cuando se crea un producto
+			String nombreImagen = uploadFileService.saveImage(file);
+			producto.setImagen(nombreImagen);
+		}else if(file.isEmpty()){ // editamos el producto pero no cambiamos la imagen
+			Producto p = new Producto();
+			p = productoService.get(producto.getId()).get();
+			producto.setImagen(p.getImagen());
+		}else {
+			String nombreImagen = uploadFileService.saveImage(file);
+			producto.setImagen(nombreImagen);
+		}
+		
 		productoService.save(producto);
 		return "redirect:/productos";
 	}
